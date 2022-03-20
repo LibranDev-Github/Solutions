@@ -83,8 +83,3 @@ function(runtime, url, error) {
     };
 
 });
-/**
- * IA - Script ID	custscript_aw_sparam_ia_scriptid	Free-Form Text	 	
- * IA - Deployment ID	custscript_aw_sparam_ia_deploymentid	Free-Form Text	 	 
- * IA - Title	custscript_aw_sparam_ia_title	Free-Form Text
- */
