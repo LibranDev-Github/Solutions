@@ -28,9 +28,6 @@ function(runtime, url, error) {
             var recordType = script.getParameter(SPARAM_RECORD);
             var approval_status_field = script.getParameter(SPARAM_STATUS);
             var next_approver_field = script.getParameter(SPARAM_APPROVER);
-
-
-
             var current_user = runtime.getCurrentUser().id;
             //var current_role = runtime.getCurrentUser().role;
             var approval_status = thisRecord.getValue({
@@ -44,15 +41,6 @@ function(runtime, url, error) {
             if (approval_status == '2') {
                 is_condition_passed = true;
            }
-
-         //   //log.debug("script",script)
-            //log.debug("recordType",recordType)
-            //log.debug("script_id",script_id)
-            //log.debug("deploy_id",deploy_id)
-           //log.debug("title",title)
-          //  //log.debug("current_user",current_user)
-          //  //log.debug("approval_status",approval_status)
-        //    //log.debug("next_approver",next_approver)
             if (is_condition_passed) {
                 var suitelet_url = url.resolveScript({
                     scriptId: script_id,
@@ -62,8 +50,6 @@ function(runtime, url, error) {
                         'custpage_recordtype': recordType,
                     }
                 });
-            //log.debug("next_apsuitelet_urlprover",suitelet_url)
-
                 form.addButton({
                     id: 'custpage_sl_' + script_id + '_' + deploy_id,
                     label: title,
