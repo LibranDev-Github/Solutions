@@ -21,47 +21,60 @@ function(runtime, search, serverWidget, record, redirect, url) {
      */
     function onRequest(context) {
         var request = context.request;
-        var invadj_id = request.parameters.custpage_invadj_id;
-        var recType = request.parameters.custpage_recordtype;
-        var recordType;
-        if(recType == "vendor"){
-            recordType = record.Type.VENDOR;
-        }else if(recType == "customer"){
-            recordType = record.Type.CUSTOMER;
+        var record_id = request.parameters.custpage_record_id;
+        var recordType = request.parameters.custpage_record_type;
+        var approvalStatus = request.parameters.custpage_approval_status;
+        var ReasonField = request.parameters.custpage_reject_reason;
+        var ReasonFieldID = request.parameters.custpage_reject_reason_id;
+
+        var LogDetails = {
+            record_id : record_id,
+            recordType : recordType,    
+            approvalStatus : approvalStatus,
+            ReasonField : ReasonField,
+            ReasonFieldID : ReasonFieldID
         }
+        //log.debug("Enter Suitelet",LogDetails);
 
-        //log.debug("request: ", request);
-        var invadj_rec = record.load({
+        var loaded_record = record.load({
             type: recordType,
-            id: invadj_id
+            id: record_id
         });
-
-        //log.debug("[POST]custpage_invadj_id: ", invadj_id);
-        //log.debug("[POST]recordType: ", recordType);
+        //'m-d-Y h:i:s
+        var FormattedDate = new Date().toLocaleString('en-US', {timeZone: 'America/Los_Angeles'})
 
         if (request.method == 'POST') {
+        var previous_reasons = request.parameters.custpage_previous_reasons;
+
+
+        var Dated_Reason_Field = "[" + FormattedDate  + "] " + ReasonField
+        var newRejectReason = previous_reasons + "\r\n" + Dated_Reason_Field
+        log.debug("Enter POST",LogDetails);
            
-            if (!isNullOrEmpty(invadj_id)) {
-                var rejection_reason = request.parameters.custpage_rejection_reason;
-                invadj_rec.setValue({
-                    fieldId: 'custentity_aw_reject_reason_entity',
-                    value: rejection_reason
+            if (!isNullOrEmpty(record_id)) {
+                loaded_record.setValue({
+                    fieldId: ReasonFieldID,
+                    value: newRejectReason
                 });
-                invadj_rec.setValue({
-                    fieldId: 'custentity_app_stat_entity',
+                loaded_record.setValue({
+                    fieldId: approvalStatus,
                     value: 4
                 });
-                invadj_rec.save({
+                loaded_record.save({
                     ignoreMandatoryFields: true
                 });
 
                 redirect.toRecord({
-                    id: invadj_id,
+                    id: record_id,
                     type: recordType
                 });
             }
         }
         //OutPost
+        var appStat = loaded_record.getValue({
+            fieldId: approvalStatus
+        });
+        log.debug(approvalStatus,appStat);
 
         var form = serverWidget.createForm({
             title: 'Reject'
@@ -72,7 +85,7 @@ function(runtime, search, serverWidget, record, redirect, url) {
         });
 
         var record_url = url.resolveRecord({
-            recordId: invadj_id,
+            recordId: record_id,
             recordType: recordType
         });
 
@@ -84,25 +97,61 @@ function(runtime, search, serverWidget, record, redirect, url) {
             functionName: "window.open('"+ record_url +"', '_self');"
         });
 
-        var fld_journalentry = form.addField({
+        var record_id_field = form.addField({
             type: serverWidget.FieldType.SELECT,
-            id: 'custpage_invadj_id',
+            id: 'custpage_record_id',
             label: 'Record',
             source: recordType
         });
 
-        fld_journalentry.defaultValue = invadj_id;
-        //log.debug("Record ID",fld_journalentry.defaultValue);
+        record_id_field.defaultValue = record_id;
+        //log.debug("Record ID",record_id_field.defaultValue);
+
+        //----------------------------------------------
+        var fld_rejField = form.addField({
+            type: serverWidget.FieldType.TEXT,
+            id: "custpage_reject_reason_id",
+            label: 'ReasonField',
+        });
+
+        fld_rejField.defaultValue = ReasonFieldID;
+
+        fld_rejField.updateDisplayType({
+            displayType: serverWidget.FieldDisplayType.HIDDEN
+        });
+        //----------------------------------------------
+        var fld_prevRes= form.addField({
+            type: serverWidget.FieldType.LONGTEXT,
+            id: "custpage_previous_reasons",
+            label: 'Previous Reject Reasons',
+        });
+        fld_prevRes.defaultValue = loaded_record.getValue({
+                 fieldId: ReasonFieldID
+             });
+        fld_prevRes.updateDisplayType({
+            displayType: serverWidget.FieldDisplayType.INLINE
+        });
+        //----------------------------------------------
+        var fld_appStatus= form.addField({
+            type: serverWidget.FieldType.TEXT,
+            id: "custpage_approval_status",
+            label: 'approvalStatus',
+        });
+        fld_appStatus.defaultValue = approvalStatus;
+        fld_appStatus.updateDisplayType({
+            displayType: serverWidget.FieldDisplayType.HIDDEN
+        });
+        //----------------------------------------------
 
         var fld_recType = form.addField({
             type: serverWidget.FieldType.TEXT,
-            id: "custpage_recordtype",
+            id: "custpage_record_type",
             label: 'Type',
         });
 
         fld_recType.defaultValue = recordType;
 
-        fld_journalentry.updateDisplayType({
+        record_id_field.updateDisplayType({
             displayType: serverWidget.FieldDisplayType.INLINE
         });
 
@@ -113,7 +162,7 @@ function(runtime, search, serverWidget, record, redirect, url) {
 
         var fld_rejectionreason = form.addField({
             type: serverWidget.FieldType.LONGTEXT,
-            id: 'custpage_rejection_reason',
+            id: 'custpage_reject_reason',
             label: 'Rejection Reason',
         });
 
@@ -122,9 +171,9 @@ function(runtime, search, serverWidget, record, redirect, url) {
         fld_rejectionreason.updateLayoutType({
             layoutType : serverWidget.FieldLayoutType.OUTSIDEBELOW
         });
-        fld_rejectionreason.defaultValue = invadj_rec.getValue({
-            fieldId: 'custentity_aw_reject_reason_entity'
-        });
+       // fld_rejectionreason.defaultValue = loaded_record.getValue({
+       //     fieldId: ReasonFieldID
+       // });
 
 
 

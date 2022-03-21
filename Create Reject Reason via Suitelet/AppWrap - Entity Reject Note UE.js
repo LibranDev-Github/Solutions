@@ -10,12 +10,13 @@ define(['N/runtime', 'N/url', 'N/error'],
  */
 function(runtime, url, error) {
 
-    var SPARAM_SUITELET_SCRIPTID = 'custscript_sparam_sl_script';
-    var SPARAM_SUITELET_DEPLOYID = 'custscript_sparam_sl_deploymentid';
-    var SPARAM_TITLE = 'custscript_sparam_sl_title';
-    var SPARAM_RECORD = 'custscript_sparam_sl_record';
-    var SPARAM_STATUS = 'custscript_sparam_sl_status';
-    var SPARAM_APPROVER= 'custscript_sparam_sl_approver';
+    var SPARAM_SUITELET_SCRIPTID = 'custscript_aw_sparam_sl_script';
+    var SPARAM_SUITELET_DEPLOYID = 'custscript_aw_sparam_sl_deploymentid';
+    var SPARAM_TITLE = 'custscript_aw_sparam_sl_title';
+    var SPARAM_RECORD = 'custscript_aw_sparam_sl_record';
+    var SPARAM_STATUS = 'custscript_aw_sparam_sl_status';
+    var SPARAM_APPROVER = 'custscript_aw_sparam_sl_approver';
+    var SPARAM_REASON = 'custscript_aw_sparam_sl_reject_reason';
 
     function beforeLoad(context) {
         if (context.type == context.UserEventType.VIEW) {
@@ -28,7 +29,9 @@ function(runtime, url, error) {
             var recordType = script.getParameter(SPARAM_RECORD);
             var approval_status_field = script.getParameter(SPARAM_STATUS);
             var next_approver_field = script.getParameter(SPARAM_APPROVER);
+            var reject_reason_field = script.getParameter(SPARAM_REASON);
             var current_user = runtime.getCurrentUser().id;
+            
             //var current_role = runtime.getCurrentUser().role;
             var approval_status = thisRecord.getValue({
                 fieldId: approval_status_field
@@ -36,6 +39,26 @@ function(runtime, url, error) {
             var next_approver = thisRecord.getValue({
                 fieldId: next_approver_field
             });
+            var reject_reason = thisRecord.getValue({
+                fieldId: reject_reason_field
+            });
+            var LogDetails = {
+                script_id : script_id,
+                deploy_id : deploy_id,
+                title : title,
+                recordType : recordType,
+                approval_status_field : approval_status_field,
+                approval_status : approval_status,
+                next_approver_field : next_approver_field,
+                next_approver : next_approver,
+                reject_reason_field : reject_reason_field,
+                reject_reason : reject_reason,
+                current_user : current_user
+            }
+            log.debug("Enter UE ",LogDetails);
+
+
+
 
             var is_condition_passed = false;
             if (approval_status == '2') {
@@ -46,8 +69,11 @@ function(runtime, url, error) {
                     scriptId: script_id,
                     deploymentId: deploy_id,
                     params: {
-                        'custpage_invadj_id': thisRecord.id,
-                        'custpage_recordtype': recordType,
+                        'custpage_record_id': thisRecord.id,
+                        'custpage_record_type': recordType,
+                        'custpage_reject_reason': reject_reason,
+                        'custpage_reject_reason_id' : reject_reason_field,
+                        'custpage_approval_status': approval_status_field,
                     }
                 });
                 form.addButton({
